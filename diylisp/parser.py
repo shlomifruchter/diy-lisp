@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import re
-from .ast import is_boolean, is_list
-from .types import LispError
+from ast import is_boolean, is_list
+from types import LispError
 
 """
 This is the parser module, with the `parse` function which you'll implement as part 1 of
@@ -10,12 +10,71 @@ the workshop. Its job is to convert strings into data structures that the evalua
 understand. 
 """
 
-
 def parse(source):
     """Parse string representation of one *single* expression
     into the corresponding Abstract Syntax Tree."""
 
-    raise NotImplementedError("DIY")
+    source = remove_comments(source)
+
+    return _parseExpression(source)
+
+    
+def _parseExpression(source):
+    ## recursiveley split all expression down to atoms
+
+    if not source:
+        return ""
+
+    isWrapped = False
+    source = source.strip();
+
+    print "source:%s" % source
+
+    # remove one parenthesis pair to get inner expression
+    if source[0] == '(' and source[-1] == ')':
+        source = source[1:-1]
+        isWrapped = True
+
+    # split expression into next level expressions
+    try:
+        expressions = split_exps(source);
+    except:
+        raise LispError("Unexpected EOF: failed to split expression '%s'" % source)
+
+    print "source:%s => expressions:%s" % (source, expressions)
+
+    # handle atom expressions
+    if len(expressions) == 1 and is_atom(expressions[0]):
+        if isWrapped:
+            wrappedOutput = []
+            wrappedOutput.append(parse_atom(expressions[0]))
+            return wrappedOutput
+        else:
+            return parse_atom(expressions[0])
+
+    # recursiveley parse complex expressions
+    output = map(_parseExpression, expressions)
+    return output
+
+def is_number(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+def is_atom(expression):
+    return expression[0] != '('
+
+def parse_atom(expression):
+    if expression == "#t":
+        return True
+    elif expression == "#f":
+        return False
+    elif is_number(expression):
+        return int(expression)
+    else:
+        return expression
 
 ##
 ## Below are a few useful utility functions. These should come in handy when 
@@ -23,11 +82,9 @@ def parse(source):
 ## counting, after all.
 ## 
 
-
 def remove_comments(source):
     """Remove from a string anything in between a ; and a linebreak"""
     return re.sub(r";.*\n", "\n", source)
-
 
 def find_matching_paren(source, start=0):
     """Given a string and the index of an opening parenthesis, determines 
@@ -46,7 +103,6 @@ def find_matching_paren(source, start=0):
             open_brackets -= 1
     return pos
 
-
 def split_exps(source):
     """Splits a source string into subexpressions 
     that can be parsed individually.
@@ -63,7 +119,6 @@ def split_exps(source):
         exp, rest = first_expression(rest)
         exps.append(exp)
     return exps
-
 
 def first_expression(source):
     """Split string into (exp, rest) where exp is the 
@@ -88,7 +143,6 @@ def first_expression(source):
 ## the REPL to work. Don't worry about them when implementing the language.
 ##
 
-
 def parse_multiple(source):
     """Creates a list of ASTs from program source constituting multiple expressions.
 
@@ -101,7 +155,6 @@ def parse_multiple(source):
 
     source = remove_comments(source)
     return [parse(exp) for exp in split_exps(source)]
-
 
 def unparse(ast):
     """Turns an AST back into lisp program source"""

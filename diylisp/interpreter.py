@@ -2,10 +2,9 @@
 
 from os.path import dirname, join
 
-from .evaluator import evaluate
-from .parser import parse, unparse, parse_multiple
-from .types import Environment
-
+from evaluator import evaluate
+from parser import parse, unparse, parse_multiple
+from types import Environment
 
 def interpret(source, env=None):
     """
@@ -18,7 +17,6 @@ def interpret(source, env=None):
         env = Environment()
 
     return unparse(evaluate(parse(source), env))
-
 
 def interpret_file(filename, env=None):
     """
